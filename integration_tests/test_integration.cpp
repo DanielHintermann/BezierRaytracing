@@ -11,6 +11,29 @@ using ::testing::TestInfo;
 using ::testing::TestPartResult;
 using ::testing::UnitTest;
 
+TEST(Nurbs, test_bug_planar_patch)
+{
+    auto scene = get_curved_patch_scene();
+
+    varmesh<4> plane(2, 2);
+
+    plane[0][0] = v4{ {-1.5, -1.5, 5, 1} };
+    plane[0][1] = v4{ {1.5,-1.5, 5, 1} };
+
+    plane[1][0] = v4{ {-1.5, -1.5, -0.5, 1} };
+    plane[1][1] = v4{ {1.5, -1.5, -0.5, 1} };
+
+    scene.mesh = plane;
+
+    screen_geometry screen(scene.screen_width, scene.screen_height, scene.field_of_view, 0, 0, 0);
+
+    auto ray = screen.get_corresponding_ray(191, 400);
+
+    auto intersections = get_ray_surface_intersection(ray, scene, 1E-4);
+
+    EXPECT_EQ(true, intersections.has_value());
+}
+
 TEST(Nurbs, test_sphere_patch)
 {
     auto scene = get_sphere_scene();
@@ -72,11 +95,17 @@ TEST(Nurbs, test_planar_patch)
 
     varmesh<4> plane(2, 2);
 
-    plane[0][0] = v4{{-1.5, 1.5, 1, 1}};
-    plane[0][1] = v4{{1.5, 0.5, 1, 1}};
-    
-    plane[1][0] = v4{{-1, -0.5, 2, 1}};
-    plane[1][1] = v4{{1.5, -0.5, 2, 1}};
+    //plane[0][0] = v4{{-1.5, 1.5, 1, 1}};
+    //plane[0][1] = v4{{1.5, 0.5, 1, 1}};
+    //
+    //plane[1][0] = v4{{-1, -0.5, 2, 1}};
+    //plane[1][1] = v4{{1.5, -0.5, 2, 1}};
+
+    plane[0][0] = v4{ {-1.5, -1.5, 5, 1} };
+    plane[0][1] = v4{ {1.5,-1.5, 5, 1} };
+
+    plane[1][0] = v4{ {-1.5, -1.5, -0.5, 1} };
+    plane[1][1] = v4{ {1.5, -1.5, -0.5, 1} };
 
     scene.mesh = plane;
 

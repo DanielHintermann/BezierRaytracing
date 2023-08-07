@@ -2,6 +2,7 @@
 
 #include <geometry/types/bezier_curve.h>
 #include <geometry/types/bezier_surface.h>
+#include <iostream>
 
 bool intervalls_overlap(const v2& i, const v2& j)
 {
@@ -262,44 +263,49 @@ std::vector<v2> bezier_quasi_interpolation_clipping(const varmesh<2> &points, do
         
         auto quasi = bezier_surface_quasi_interpolation(clipped_mesh);
         
-        
-        if (max_deviation < epsilon)
+        double window_diff_u = windows.first[1] - windows.first[0];
+        double window_diff_v = windows.second[1] - windows.second[0];
+
+        if (max_deviation < epsilon && window_diff_u < epsilon && window_diff_v < epsilon)
         {
-            varmesh<2> m(2, 2);
-            m[0][0] = quasi.element(0, 0);
-            m[0][1] = quasi.element(0, points.col_size()-1);
-            m[1][0] = quasi.element(points.row_size()-1, 0);
-            m[1][1] = quasi.element(points.row_size()-1, points.col_size()-1);
-            
-            auto solutions = solve_linear_form(v2{{0,0}}, m, epsilon);
-            for (int sol = 0; sol < solutions.size(); sol++)
-            {
-                double diffu = windows.first[1] - windows.first[0];
-                double diffv = windows.second[1] - windows.second[0];
-                double u = windows.first[0] + solutions[sol][0] * diffu;
-                double v = windows.second[0] + solutions[sol][1] * diffv;                        
-                        
-                intersections.push_back(v2{{u, v}});
-            }
+            double u = (windows.first[0] + windows.first[1]) / 2;
+            double v = (windows.second[0] + windows.second[1]) / 2;
+            intersections.push_back(v2{ {u, v} });
         }
         else
         {
-            auto does_contain_origin = does_increased_mesh_contain_origin(quasi, max_deviation);
+                auto does_contain_origin = does_increased_mesh_contain_origin(quasi, max_deviation);
 
-            for (int i = 0; i < points.row_size() - 1; i++)
-            {
-                for (int j = 0; j < points.col_size() - 1; j++)
-                {                   
-                    if (does_contain_origin[i][j])
+                if (points.row_size() == 2 && points.col_size() == 2)
+                {
+                    if (does_contain_origin[0][0])
                     {
-                        double diffu = (windows.first[1] - windows.first[0]) / (points.col_size() - 1);
-                        v2 sub_intervall_u{ {diffu * j + windows.first[0], diffu * (j + 1) + windows.first[0]} };
-                        double diffv = (windows.second[1] - windows.second[0]) / (points.row_size() - 1);
-                        v2 sub_intervall_v{ {diffv * i + windows.second[0], diffv * (i + 1) + windows.second[0]} };
-                        q.push_back(std::make_pair(sub_intervall_u, sub_intervall_v));
+                        double mid_u = (windows.first[0] + windows.first[1]) / 2;
+                        double mid_v = (windows.second[0] + windows.second[1]) / 2;
+
+                        q.push_back(std::make_pair(v2{ windows.first[0], mid_u }, v2{ windows.second[0], mid_v }));
+                        q.push_back(std::make_pair(v2{ windows.first[0], mid_u }, v2{ mid_v, windows.second[1] }));
+                        q.push_back(std::make_pair(v2{ mid_u, windows.first[1] }, v2{ mid_v, windows.second[1] }));
+                        q.push_back(std::make_pair(v2{ mid_u, windows.first[1] }, v2{ windows.second[0], mid_v }));
                     }
                 }
-            }
+                else
+                {
+                    for (int i = 0; i < points.row_size() - 1; i++)
+                    {
+                        for (int j = 0; j < points.col_size() - 1; j++)
+                        {
+                            if (does_contain_origin[i][j])
+                            {
+                                double diffu = (windows.first[1] - windows.first[0]) / (points.col_size() - 1);
+                                v2 sub_intervall_u{ {diffu * j + windows.first[0], diffu * (j + 1) + windows.first[0]} };
+                                double diffv = (windows.second[1] - windows.second[0]) / (points.row_size() - 1);
+                                v2 sub_intervall_v{ {diffv * i + windows.second[0], diffv * (i + 1) + windows.second[0]} };
+                                q.push_back(std::make_pair(sub_intervall_u, sub_intervall_v));
+                            }
+                        }
+                    }
+                }
         }        
     }
     

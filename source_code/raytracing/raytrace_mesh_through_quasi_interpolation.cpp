@@ -99,7 +99,7 @@ std::optional<std::tuple<int, v3, v3, v2>> get_ray_surface_intersection(v3 ray, 
 
 void trace_ray(std::vector<int>::iterator pixel, v3 ray, varmesh_scene_descriptor& scene)
 {
-    auto intersection = get_ray_surface_intersection(ray, scene, 1E-4);
+    auto intersection = get_ray_surface_intersection(ray, scene, scene.epsilon);
 
     if (intersection.has_value())
     {
@@ -117,7 +117,7 @@ void trace_ray(std::vector<int>::iterator pixel, v3 ray, varmesh_scene_descripto
 
 void trace_ray(std::vector<int>::iterator pixel, v3 ray, multiple_surfaces_scene_descriptor& scene)
 {
-    auto intersection = get_ray_surface_intersection(ray, scene, 1E-4);
+    auto intersection = get_ray_surface_intersection(ray, scene, scene.epsilon);
 
     if (intersection.has_value())
     {

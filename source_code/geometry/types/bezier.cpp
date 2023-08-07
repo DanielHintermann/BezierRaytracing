@@ -33,7 +33,9 @@ std::vector<v2> solve_linear_form(const v2 &y, const varmesh<2> &m, double epsil
         {
             v2 ey = evaluate_bezier_surface(m, solution_u[i], solution_v[j]);
             
-            if (l_inf(y - ey) <= epsilon)
+            auto diff = l_inf(y - ey);
+
+            if (diff <= epsilon)
             {
                 solutions.push_back(v2{{solution_u[i], solution_v[j]}});
             }

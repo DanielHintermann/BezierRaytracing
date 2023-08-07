@@ -23,6 +23,7 @@ struct varmesh_scene_descriptor : scene_descriptor
 {
 	varmesh<4> mesh;
 	std::function<std::vector<int>(double, double)> mesh_color;
+	double epsilon;
 };
 
 struct facetted_surface_scene_descriptor : scene_descriptor
@@ -49,6 +50,7 @@ struct scene_object {
 struct multiple_surfaces_scene_descriptor : scene_descriptor
 {
 	std::vector<scene_object> surfaces;
+	double epsilon;
 };
 
 #endif // RAYRACING_SCENE_DESCRIPTOR_H_
