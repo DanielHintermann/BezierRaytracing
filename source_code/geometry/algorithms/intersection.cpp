@@ -254,7 +254,7 @@ bool circle_overlaps_polygon(double radius, const std::vector<v<2>> &polygon)
     return origin_inside_polygon(polygon);
 }
 
-std::vector<v3> get_points(const varmesh<4> m)
+std::vector<v3> get_points(const varmesh<4> &m)
 {
     std::vector<v3> result;
 
@@ -262,7 +262,7 @@ std::vector<v3> get_points(const varmesh<4> m)
     {
         for (int j = 0; j < m.col_size(); j++)
         {
-            result.push_back(remove_dimension(m[i][j]));
+            result.push_back(remove_dimension(m.element(i, j)));
         }
     }
 

@@ -48,7 +48,7 @@ template <size_t N> v<N> evaluate_bezier_surface(const varmesh<N>& m, double u, 
         std::vector<v<N>> row;
         for (int j = 0; j < m.col_size(); j++)
         {
-            row.push_back(m[i][j]);
+            row.push_back(m.element(i, j));
         }
         results.push_back(evaluate_bezier_curve(row, u));
     }
@@ -63,7 +63,7 @@ template<std::size_t N> varmesh<N> bezier_surface_quasi_interpolation(const varm
     {
         for (int i = 1; i < m.row_size() - 1; i++)
         {
-            diff_r[i][j] = 0.25 * (m[i - 1][j] + 2 * m[i][j] + m[i + 1][j]);
+            diff_r.element(i, j) = 0.25 * (m.element(i - 1, j) + 2 * m.element(i, j) + m.element(i + 1, j));
         }
     }
 
@@ -73,55 +73,13 @@ template<std::size_t N> varmesh<N> bezier_surface_quasi_interpolation(const varm
     {
         for (int j = 1; j < m.col_size() - 1; j++)
         {
-            result[i][j] = 0.25 * (diff_r[i][j - 1] + 2 * diff_r[i][j] + diff_r[i][j + 1]);
+            result.element(i, j) = 0.25 * (diff_r.element(i, j - 1) + 2 * diff_r.element(i, j) + diff_r.element(i, j + 1));
         }
     }
 
     return result;
 }
 
-template <size_t d> varmesh<d> bezier_surface_insert_control_point_row(const varmesh<d>& m)
-{
-    varmesh<d> result(m.row_size(), m.col_size() + 1);
-
-    for (int i = 0; i < m.row_size(); i++)
-    {
-        std::vector<v<d>> current_row;
-        for (int j = 0; j < m.col_size(); j++)
-        {
-            current_row.push_back(m[i][j]);
-        }
-        auto divided_row = bezier_curve_insert_control_point(current_row);
-        for (int j = 0; j < m.col_size() + 1; j++)
-        {
-            result[i][j] = divided_row[j];
-        }
-    }
-
-    return result;
-}
-
-template <size_t d> varmesh<d> bezier_surface_insert_control_point_column(const varmesh<d>& m)
-{
-    varmesh<d> result(m.row_size() + 1, m.col_size());
-
-    for (int i = 0; i < m.col_size(); i++)
-    {
-        std::vector<v<d>> current_column;
-        for (int j = 0; j < m.row_size(); j++)
-        {
-            current_column.push_back(m[j][i]);
-        }
-        auto divided_column = bezier_curve_insert_control_point(current_column);
-        for (int j = 0; j < m.row_size() + 1; j++)
-        {
-            result[j][i] = divided_column[j];
-        }
-    }
-
-    return result;
-}
-/*
 template <size_t d> varmesh<d> bezier_surface_insert_control_point_row(const varmesh<d>& m)
 {
     varmesh<d> result(m.row_size(), m.col_size() + 1);
@@ -134,7 +92,7 @@ template <size_t d> varmesh<d> bezier_surface_insert_control_point_row(const var
             current_row.push_back(m.element(i, j));
         }
         auto divided_row = bezier_curve_insert_control_point(current_row);
-        for (int j = 0; j < divided_row.size(); j++)
+        for (int j = 0; j < m.col_size() + 1; j++)
         {
             result.element(i, j) = divided_row[j];
         }
@@ -155,7 +113,7 @@ template <size_t d> varmesh<d> bezier_surface_insert_control_point_column(const 
             current_column.push_back(m.element(j, i));
         }
         auto divided_column = bezier_curve_insert_control_point(current_column);
-        for (int j = 0; j < divided_column.size(); j++)
+        for (int j = 0; j < m.row_size() + 1; j++)
         {
             result.element(j, i) = divided_column[j];
         }
@@ -163,7 +121,7 @@ template <size_t d> varmesh<d> bezier_surface_insert_control_point_column(const 
 
     return result;
 }
-*/
+
 template <size_t d> void bezier_clip_surface_by_row(varmesh<d>& m, double umin, double umax)
 {
     for (int i = 0; i < m.row_size(); i++)
@@ -191,13 +149,13 @@ template <size_t d> std::pair<varmesh<d>, varmesh<d>> subdivide_bezier_surface_b
         std::vector<std::array<double, d>> current_row(m.col_size());
         for (int j = 0; j < m.col_size(); j++)
         {
-            current_row[j] = m[i][j];
+            current_row[j] = m.element(i, j);
         }
         auto divided_row = subdivide_bezier_curve(current_row, u);
         for (int j = 0; j < m.col_size(); j++)
         {
-            left[i][j] = divided_row.first[j];
-            right[i][j] = divided_row.second[j];
+            left.element(i, j) = divided_row.first[j];
+            right.element(i, j) = divided_row.second[j];
         }
     }
 
@@ -213,63 +171,18 @@ template <size_t d> std::pair<varmesh<d>, varmesh<d>> subdivide_bezier_surface_b
         std::vector<v<d>> current_column(m.row_size());
         for (int j = 0; j < m.row_size(); j++)
         {
-            current_column[j] = m[j][i];
+            current_column[j] = m.element(j, i);
         }
         auto divided_column = subdivide_bezier_curve(current_column, u);
         for (int j = 0; j < m.row_size(); j++)
         {
-            top[j][i] = divided_column.first[j];
-            bottom[j][i] = divided_column.second[j];
+            top.element(j, i) = divided_column.first[j];
+            bottom.element(j, i) = divided_column.second[j];
         }
     }
 
     return std::make_pair(top, bottom);
 }
-/*
-template <size_t d> std::pair<varmesh<d>, varmesh<d>> subdivide_bezier_surface_by_row(const varmesh<d>& m, double u)
-{
-    varmesh<d> left(m.row_size(), m.col_size()), right(m.row_size(), m.col_size());
-
-    for (int i = 0; i < m.row_size(); i++)
-    {
-        std::vector<std::array<double, d>> current_row(m.col_size());
-        for (int j = 0; j < m.col_size(); j++)
-        {
-            current_row[j] = m[i][j];
-        }
-        auto divided_row = subdivide_bezier_curve(current_row, u);
-        for (int j = 0; j < m.col_size(); j++)
-        {
-            left[i][j] = divided_row.first[j];
-            right[i][j] = divided_row.second[j];
-        }
-    }
-
-    return std::make_pair(left, right);
-}
-
-template <size_t d> std::pair<varmesh<d>, varmesh<d>> subdivide_bezier_surface_by_column(const varmesh<d>& m, double u)
-{
-    varmesh<d> top(m.row_size(), m.col_size()), bottom(m.row_size(), m.col_size());
-
-    for (int i = 0; i < m.col_size(); i++)
-    {
-        std::vector<v<d>> current_column(m.row_size());
-        for (int j = 0; j < m.row_size(); j++)
-        {
-            current_column[j] = m[j][i];
-        }
-        auto divided_column = subdivide_bezier_curve(current_column, u);
-        for (int j = 0; j < m.row_size(); j++)
-        {
-            top[j][i] = divided_column.first[j];
-            bottom[j][i] = divided_column.second[j];
-        }
-    }
-
-    return std::make_pair(top, bottom);
-}
-*/
 
 template<size_t d> void bezier_clip_surface(varmesh<d>& m, const v2& u, const v2& v)
 {

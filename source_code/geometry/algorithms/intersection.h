@@ -89,7 +89,7 @@ template<size_t N> double bezier_max_deviation_to_quasi_interpolation(const varm
     return max_dev_rows + max_dev_cols;
 }
 
-std::vector<double> bezier_quasi_interpolation_clipping(const std::vector<v<1>> points, double epsilon);
+std::vector<double> bezier_quasi_interpolation_clipping(const std::vector<v<1>> &points, double epsilon);
 std::vector<double> get_intersections_quasi(const v2 &origin, const v2 &direction, const std::vector<v2> &points, double epsilon);
 std::vector<double> get_intersections_quasi(const v2 &origin, const v2 &direction, const std::vector<v3> &points, double epsilon);
 

@@ -80,7 +80,7 @@ template<std::size_t N> varmesh<N - 1> remove_dimension(const varmesh<N>& m)
     {
         for (size_t j = 0; j < m.col_size(); j++)
         {
-            result[i][j] = remove_dimension(m[i][j]);
+            result.element(i, j) = remove_dimension(m.element(i, j));
         }
     }
 
@@ -95,7 +95,7 @@ template <size_t d> v<d> barycentre_of_mesh(const varmesh<d>& m)
     {
         for (int j = 0; j < m.col_size(); j++)
         {
-            origin = origin + m[i][j];
+            origin = origin + m.element(i, j);
         }
     }
 
@@ -110,7 +110,7 @@ template<size_t N> std::vector<v<N>> row(const varmesh<N>& m, size_t index)
 
     for (int i = 0; i < m.col_size(); i++)
     {
-        result.push_back(m[index][i]);
+        result.push_back(m.element(index, i));
     }
 
     return result;
@@ -122,7 +122,7 @@ template<size_t N> std::vector<v<N>> col(const varmesh<N>& m, size_t index)
 
     for (int i = 0; i < m.row_size(); i++)
     {
-        result.push_back(m[i][index]);
+        result.push_back(m.element(i, index));
     }
 
     return result;
@@ -136,7 +136,7 @@ template<size_t N> varmesh<N> transpose(const varmesh<N>& m)
     {
         for (int j = 0; j < m.row_size(); j++)
         {
-            result[i][j] = m[j][i];
+            result.element(i, j) = m.element(j, i);
         }
     }
 
@@ -154,7 +154,7 @@ public:
     }
     v<d>& operator[](const size_t ri)
     {
-        return m[ri][ci];
+        return m.element(ri, ci);
     }
     size_t size()
     {
@@ -173,7 +173,7 @@ public:
     }
     v<d>& operator[](const size_t ci)
     {
-        return m[ri][ci];
+        return m.element(ri, ci);
     }
     size_t size()
     {
@@ -192,7 +192,7 @@ public:
     }
     const v<d>& operator[](const size_t ci) const
     {
-        return m[ri][ci];
+        return m.element(ri, ci);
     }
     size_t size() const
     {
@@ -211,13 +211,26 @@ public:
     }
     const v<d>& operator[](const size_t ri) const
     {
-        return m[ri][ci];
+        return m.element(ri, ci);
     }
     size_t size() const
     {
         return m.row_size();
     }
 };
+
+template<size_t d> varmesh<d> operator+(varmesh<d> mesh, v<d> translate)
+{
+    for (int i = 0; i < mesh.row_size(); i++)
+        for (int j = 0; j < mesh.col_size(); j++)
+            mesh.element(i, j) = mesh.element(i, j) + translate;
+
+    return mesh;
+}
+
+varmesh<4> move(varmesh<4> mesh, v<3> translate);
+
+varmesh<4> scale(varmesh<4> mesh, double scale);
 
 
 #endif /* varmesh_h */

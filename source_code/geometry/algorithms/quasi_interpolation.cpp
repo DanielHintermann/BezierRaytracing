@@ -18,7 +18,7 @@ bool intervalls_overlap(const v2& i, const v2& j)
     return true;
 }
 
-std::vector<double> bezier_quasi_interpolation_clipping(const std::vector<v<1>> points, double epsilon)
+std::vector<double> bezier_quasi_interpolation_clipping(const std::vector<v<1>> &points, double epsilon)
 {
     std::vector<double> intersections;
     
@@ -123,7 +123,7 @@ std::vector<std::vector<bool>> does_increased_mesh_contain_origin(const varmesh<
     {
         for (int j = 0; j < mesh.col_size(); j++)
         {
-            dist2_to_origin[i][j] = length2(mesh[i][j]);
+            dist2_to_origin[i][j] = length2(mesh.element(i, j));
         }
     }
 
@@ -135,8 +135,8 @@ std::vector<std::vector<bool>> does_increased_mesh_contain_origin(const varmesh<
 
             if (!cur_overlaps)
             {
-                const v2& p = mesh[i][j];
-                const v2& q = mesh[i][j + 1];
+                const v2& p = mesh.element(i, j);
+                const v2& q = mesh.element(i, j + 1);
                 v3 hesse = unnormalized_hesse_from(p, q);
 
                 double d = hesse[2];
@@ -179,8 +179,8 @@ std::vector<std::vector<bool>> does_increased_mesh_contain_origin(const varmesh<
 
             if (!cur_overlaps)
             {
-                const v2& p = mesh[i][j];
-                const v2& q = mesh[i + 1][j];
+                const v2& p = mesh.element(i, j);
+                const v2& q = mesh.element(i + 1, j);
                 v3 hesse = unnormalized_hesse_from(p, q);
 
                 double d = hesse[2];
@@ -223,10 +223,10 @@ std::vector<std::vector<bool>> does_increased_mesh_contain_origin(const varmesh<
             if (!cur_overlap)
             {
                 std::vector<v2> quad(4, v2{ {0, 0} });
-                quad[0] = (mesh[i][j]);
-                quad[1] = (mesh[i][j + 1]);
-                quad[2] = (mesh[i + 1][j + 1]);
-                quad[3] = (mesh[i + 1][j]);
+                quad[0] = (mesh.element(i, j));
+                quad[1] = (mesh.element(i, j + 1));
+                quad[2] = (mesh.element(i + 1, j + 1));
+                quad[3] = (mesh.element(i + 1, j));
 
                 cur_overlap = origin_inside_polygon(quad);
 
@@ -266,10 +266,10 @@ std::vector<v2> bezier_quasi_interpolation_clipping(const varmesh<2> &points, do
         if (max_deviation < epsilon)
         {
             varmesh<2> m(2, 2);
-            m[0][0] = quasi[0][0];
-            m[0][1] = quasi[0][points.col_size()-1];
-            m[1][0] = quasi[points.row_size()-1][0];
-            m[1][1] = quasi[points.row_size()-1][points.col_size()-1];
+            m[0][0] = quasi.element(0, 0);
+            m[0][1] = quasi.element(0, points.col_size()-1);
+            m[1][0] = quasi.element(points.row_size()-1, 0);
+            m[1][1] = quasi.element(points.row_size()-1, points.col_size()-1);
             
             auto solutions = solve_linear_form(v2{{0,0}}, m, epsilon);
             for (int sol = 0; sol < solutions.size(); sol++)

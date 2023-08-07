@@ -12,7 +12,7 @@ FetchContent_MakeAvailable(googletest)
 
 include(GoogleTest)
 
-add_executable(integration_tests test_main.cpp test_integration.cpp)
+add_executable(integration_tests scene_setup.cpp test_main.cpp test_integration.cpp test_multiple_surfaces_scene.cpp)
 target_link_libraries(integration_tests source_code GTest::gtest_main)
 
 include(GoogleTest)

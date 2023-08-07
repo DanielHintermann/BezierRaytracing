@@ -29,3 +29,12 @@ std::tuple<std::vector<int>, unsigned int, unsigned int> raytrace_scene_through_
     return raytrace_scene_multithreaded<varmesh_scene_descriptor>(scene, trace_ray_through_quasi_interpolation, threadcount);
 }
 
+std::tuple<std::vector<int>, unsigned int, unsigned int> raytrace_scene_through_quasi_interpolation_multithreaded(multiple_surfaces_scene_descriptor& scene, int threadcount)
+{
+    auto trace_ray_through_quasi_interpolation = [](std::vector<int>::iterator pixel, v3 ray, multiple_surfaces_scene_descriptor& scene) {
+        trace_ray(pixel, ray, scene);
+    };
+
+    return raytrace_scene_multithreaded<multiple_surfaces_scene_descriptor>(scene, trace_ray_through_quasi_interpolation, threadcount);
+}
+

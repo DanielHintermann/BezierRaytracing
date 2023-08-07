@@ -23,5 +23,7 @@ std::optional<std::tuple<v3, v3, v2>> get_ray_surface_intersection(v3 ray, varme
 
 void trace_ray(std::vector<int>::iterator pixel, v3 ray, varmesh_scene_descriptor& scene);
 
+void trace_ray(std::vector<int>::iterator pixel, v3 ray, multiple_surfaces_scene_descriptor& scene);
+
 
 #endif

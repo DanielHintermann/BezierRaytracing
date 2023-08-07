@@ -514,6 +514,7 @@ TEST(Nurbs, test_raytrace_scene_multithreaded_empty)
     512,
     512,
     v3{0, 0, -5},
+    0, 0, 0,
     30,
     v3{1, 5, 1}
     };

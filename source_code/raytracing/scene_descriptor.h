@@ -12,6 +12,9 @@ struct scene_descriptor
 	int screen_width;
 	int screen_height;
 	v3 origin;
+	double rotation_angle_e1;
+	double rotation_angle_e2;
+	double rotation_angle_e3;
 	double field_of_view;
 	v3 light;	
 };
@@ -36,6 +39,16 @@ struct subdivided_mesh_scene_descriptor : varmesh_scene_descriptor
 	}
 
 	std::vector<varmesh<4>> meshes_hierarchy;
+};
+
+struct scene_object {
+	varmesh<4> mesh;
+	std::function<std::vector<int>(double, double)> mesh_color;
+};
+
+struct multiple_surfaces_scene_descriptor : scene_descriptor
+{
+	std::vector<scene_object> surfaces;
 };
 
 #endif // RAYRACING_SCENE_DESCRIPTOR_H_

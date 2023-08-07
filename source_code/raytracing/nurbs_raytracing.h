@@ -14,7 +14,7 @@
 template<class scene_descriptor_type>
 void raytrace_scene(std::vector<int>& pixel, synciterator& iter, scene_descriptor_type& scene, std::function<void(std::vector<int>::iterator, v3, scene_descriptor_type&)> trace_ray_functional)
 {
-    screen_geometry screen(scene.screen_width, scene.screen_height, scene.field_of_view); 
+    screen_geometry screen(scene.screen_width, scene.screen_height, scene.field_of_view, 0, 0, 0);
 
     std::pair<int, int> xy;
 
@@ -67,6 +67,8 @@ std::tuple<std::vector<int>, unsigned int, unsigned int> raytrace_scene_through_
 std::tuple<std::vector<int>, unsigned int, unsigned int> raytrace_scene_with_facetted_surface_multithreaded(facetted_surface_scene_descriptor& scene, int threadcount);
 
 std::tuple<std::vector<int>, unsigned int, unsigned int> raytrace_scene_with_meshes_hierarchy_multithreaded(varmesh_scene_descriptor& scene, int threadcount);
+
+std::tuple<std::vector<int>, unsigned int, unsigned int> raytrace_scene_through_quasi_interpolation_multithreaded(multiple_surfaces_scene_descriptor& scene, int threadcount);
 
 
 #endif /* NURBS_RAYTRACING_H_ */

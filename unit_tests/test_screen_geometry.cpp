@@ -16,7 +16,7 @@ TEST(ScreenGeometry, test_screen_geometry_consistency)
 	int h = 800;
 	double fov = 30;
 
-	screen_geometry s(w, h, fov);
+	screen_geometry s(w, h, fov, 0.1, 0.2, 0.3);
 
 	for (int i = 0; i < w; i++)
 	{
@@ -39,7 +39,7 @@ TEST(ScreenGeometry, test_screen_geometry_aspectratio)
 	int h = 512;
 	double fov = 30;
 
-	screen_geometry s(w, h, fov);
+	screen_geometry s(w, h, fov, 0, 0, 0);
 
 	auto ray_mid = s.get_corresponding_ray(1023, 255);
 

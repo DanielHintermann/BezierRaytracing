@@ -272,9 +272,9 @@ bool angle_less(const v2& p, const v2& q)
 
 v3 normale_of_mesh(const varmesh<3>& m)
 {
-    const v3& origin = m[0][0];
-    const v3& e01 = m[0][m.col_size() - 1];
-    const v3& e10 = m[m.row_size() - 1][0];
+    const v3& origin = m.element(0, 0);
+    const v3& e01 = m.element(0, m.col_size() - 1);
+    const v3& e10 = m.element(m.row_size() - 1, 0);
 
     return cross_product(e01 - origin, e10 - origin);
 }
@@ -287,7 +287,7 @@ varmesh<2> project_mesh(const varmesh<4>& m, const v4& plane1, const v4& plane2)
     {
         for (int j = 0; j < m.col_size(); j++)
         {
-            result[i][j] = v2{ {m[i][j] * plane1, m[i][j] * plane2} };
+            result.element(i, j) = v2{ {m.element(i, j) * plane1, m.element(i, j) * plane2} };
         }
     }
 

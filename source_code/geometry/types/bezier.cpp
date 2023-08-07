@@ -21,9 +21,9 @@ double bezier_z_coefficient(int degree)
 
 std::vector<v2> solve_linear_form(const v2 &y, const varmesh<2> &m, double epsilon)
 {
-    auto solution_v = solve_linear_form(y, m[0][0], m[1][0], m[0][1], m[1][1]);
+    auto solution_v = solve_linear_form(y, m.element(0, 0), m.element(1, 0), m.element(0, 1), m.element(1, 1));
     
-    auto solution_u = solve_linear_form(y, m[0][0], m[0][1], m[1][0], m[1][1]);
+    auto solution_u = solve_linear_form(y, m.element(0, 0), m.element(0, 1), m.element(1, 0), m.element(1, 1));
     
     std::vector<v2> solutions;
     
