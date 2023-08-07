@@ -169,18 +169,11 @@ varmesh_scene_descriptor get_sphere_scene()
             color_index = 0;
         }
 
-        //if (0.25 >= length2(uv_parameter - v2{0.5, 0.5}))
-        //{
-            if (0 == color_index)
-                return std::vector<int>{ {255, 210, 80}};
-            else
-                return std::vector<int>{ {210, 80, 255}};
+        if (0 == color_index)
+            return std::vector<int>{ {255, 210, 80}};
+        else
+            return std::vector<int>{ {210, 80, 255}};
 
-            //}
-            //else
-            //{
-            //    return std::vector<int>{ {0, 0, 0}};
-            //}
         }
     };
 
