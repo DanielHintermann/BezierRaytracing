@@ -20,6 +20,7 @@
 #include <graphics/graphics_formulas.h>
 
 std::optional<std::tuple<v3, v3, v2>> get_ray_surface_intersection(v3 ray, varmesh_scene_descriptor& scene, double epsilon);
+std::optional<std::tuple<int, v3, v3, v2>> get_ray_surface_intersection(v3 ray, multiple_surfaces_scene_descriptor& scene, double epsilon);
 
 void trace_ray(std::vector<int>::iterator pixel, v3 ray, varmesh_scene_descriptor& scene);
 

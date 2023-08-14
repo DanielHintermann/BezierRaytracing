@@ -12,8 +12,8 @@
 
 double intersection_with_triangle(const v3 &origin, const v3 &direction, const v3 &u, const v3 &v, const v3 &w);
 bool intersects_convex_hull(const v3 &origin, const v3 &dir, const std::vector<v3> &points);
-bool is_origin_in_convex_hull_atan2(std::vector<v2> &points);
-bool is_origin_in_convex_hull(std::vector<v2> &points);
+bool is_origin_in_convex_hull_atan2(std::vector<v2> points);
+bool is_origin_in_convex_hull(std::vector<v2> points);
 
 bool intersects_e1_halfline(const v2& p, const v2 q);
 bool origin_inside_polygon(const std::vector<v2> &polygon);

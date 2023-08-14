@@ -3,6 +3,9 @@
 
 #include "vector.h"
 
+#include <string>
+#include <sstream>
+
 template<size_t DIM> class varmesh
 {
 public:
@@ -62,6 +65,40 @@ public:
     size_t row_size() const
     {
         return rows;
+    }
+
+    size_t size() const
+    {
+        return points.size();
+    }
+
+    std::vector<v<DIM>> get_points() const
+    {
+        return points;
+    }
+
+    std::string to_string() const
+    {
+        std::stringstream result;
+
+        for (int r = 0; r < rows; r++) 
+        {
+            result << "{";
+            for (int c = 0; c < cols; c++)
+            {
+                result << "(";
+                for (int d = 0; d < DIM; d++)
+                {
+                    result << element(r, c)[d];
+                    result << ", ";
+                }
+                result << "), ";
+            }
+            result << "}\n";
+        }
+
+
+        return result.str();
     }
     
 private:

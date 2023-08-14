@@ -3,6 +3,9 @@
 
 #include "intersection.h"
 
+std::vector<v2> bilinear_patch_roots_clipping(varmesh<2> mesh, double epsilon);
+std::vector<v2> bilinear_patch_roots(const varmesh<2>& mesh, double epsilon);
+
 std::vector<std::vector<bool>> does_increased_mesh_contain_origin(const varmesh<2>& mesh, double offset);
 
 

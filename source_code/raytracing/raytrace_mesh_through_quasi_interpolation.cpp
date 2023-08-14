@@ -72,6 +72,12 @@ std::optional<std::tuple<int, v3, v3, v2>> get_ray_surface_intersection(v3 ray, 
             {
                 v3 distvec = remove_dimension(evaluate_bezier_surface(scene.surfaces[scene_object_index].mesh, intersections[i][0], intersections[i][1])) - scene.origin;
 
+                //std::cout << "\nDist vec : " << distvec[0] << ", " << distvec[1] << ", " << distvec[2];
+
+                //auto a = angle(distvec, ray);
+
+                //std::cout << "\nangle : " << 180 * a / std::numbers::pi;
+
                 if (0 < distvec * ray)
                 {
                     double this_t = distvec * distvec;

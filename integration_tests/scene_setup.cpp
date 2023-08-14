@@ -2,6 +2,11 @@
 
 #include <gtest/gtest.h>
 
+int threads_to_use()
+{
+    return std::thread::hardware_concurrency();
+}
+
 void compare_actual_with_expected_file(const std::string file_name)
 {
     auto actual = read_text_file(get_actual_folder() / file_name);
@@ -123,6 +128,38 @@ varmesh<4> get_sphere_patch()
     return m;
 }
 
+varmesh<4> get_twisted_patch()
+{
+    varmesh<4> m(2, 2);
+
+    m[0][0] = v4{ {-2, 0, 1, 1} };
+    m[0][1] = v4{ {2, 0, 1, 1} };
+
+    m[1][0] = v4{ {0, -2, 2, 1} };
+    m[1][1] = v4{ {0, 2, 2, 1} };
+
+    return m;
+}
+
+varmesh<4> get_twisted_patch3()
+{
+    varmesh<4> m(3, 3);
+
+    m[0][0] = v4{ {-2, 0, 1, 1} };
+    m[0][1] = v4{ {0, 0, 1, 1} };
+    m[0][2] = v4{ {2, 0, 1, 1} };
+
+    m[1][0] = v4{ {-1, -1, 1.5, 1} };
+    m[1][1] = v4{ {0, 0, 1, 1.5} };
+    m[1][2] = v4{ {1, 1, 1, 1.5} };
+
+    m[2][0] = v4{ {0, -2, 2, 1} };
+    m[2][1] = v4{ {0, 0, 2, 1} };
+    m[2][2] = v4{ {0, 2, 2, 1} };
+
+    return m;
+}
+
 varmesh_scene_descriptor get_curved_patch_scene()
 {
     varmesh_scene_descriptor scene = {
@@ -135,6 +172,23 @@ varmesh_scene_descriptor get_curved_patch_scene()
     get_curved_patch(),
     get_texture(0),
     1E-5
+    };
+
+    return scene;
+}
+
+varmesh_scene_descriptor get_twisted_patch_scene()
+{
+    varmesh_scene_descriptor scene = {
+    512,
+    512,
+    v3{0, 0, -5},
+    0, 0, 0,
+    30,
+    v3{-1, 2, -5},
+    get_twisted_patch(),
+    get_texture(0),
+    1E-9
     };
 
     return scene;
@@ -181,6 +235,47 @@ multiple_surfaces_scene_descriptor get_multiple_surfaces_scene()
             30,
             v3{ -1, 2, -5 },
                 objects,
-                1E-5
+                1E-8
+    };
+}
+
+multiple_surfaces_scene_descriptor get_multiple_splitted_surfaces_scene()
+{
+    varmesh<4> plane(2, 2);
+
+    plane[0][0] = v4{ {-1.5, -1.5, 1, 1} };
+    plane[0][1] = v4{ {1.5,-1.5, 1, 1} };
+
+    plane[1][0] = v4{ {-1.5, -1.5, -0.5, 1} };
+    plane[1][1] = v4{ {1.5, -1.5, -0.5, 1} };
+
+    auto objects = std::vector<scene_object>{
+        scene_object{ move(scale(get_curved_patch(), -0.6), v3{0.4, 0.4, 3}), get_texture(0) },
+        scene_object{ move(scale(get_curved_patch(), 0.6), v3{-0.3, -0.3, 2}), get_texture(1) },
+        scene_object{ plane, get_texture(0)}
+    };
+
+    for (int i = 1; i < 50; i++)
+    {
+        varmesh<4> p(2, 2);
+
+        p[0][0] = v4{ {-1.5, -1.5, i+1., 1} };
+        p[0][1] = v4{ {1.5,-1.5, i+1., 1} };
+
+        p[1][0] = v4{ {-1.5, -1.5, i + 0., 1} };
+        p[1][1] = v4{ {1.5, -1.5, i + 0., 1} };
+
+        objects.push_back(scene_object{ p, get_texture(0) });
+    }
+
+    return multiple_surfaces_scene_descriptor{
+            512,
+            512,
+            v3{ 0, 0, -5 },
+            0, 0, 0,
+            30,
+            v3{ -1, 2, -5 },
+                objects,
+                1E-8
     };
 }

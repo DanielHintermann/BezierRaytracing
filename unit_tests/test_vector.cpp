@@ -2,6 +2,9 @@
 
 #include <geometry/types/bezier.h>
 
+#include <geometry/algorithms/quasi_interpolation.h>
+#include <geometry/types/bezier_surface.h>
+
 using ::testing::InitGoogleTest;
 using ::testing::Test;
 using ::testing::TestCase;
@@ -10,6 +13,153 @@ using ::testing::TestInfo;
 using ::testing::TestPartResult;
 using ::testing::UnitTest;
 
+varmesh<2> get_bilinear_patch()
+{
+	/*
+		[0]	-5.0299731099712508	double
+		[1]	2.5515510043108915	double
+		
+		[0]	-2.0361692235851914	double
+		[1]	2.5515510043108915	double
+		
+		[0]	-1.7859714022930659	double
+		[1]	-1.1647750360679388	double
+		
+		[0]	1.2078324840929935	double
+		[1]	-1.1647750360679388	double
+
+
+*/
+	varmesh<2> m(2, 2);
+	m.element(0, 0) = { -5.0299731099712508, 2.5515510043108915 };
+	m.element(0, 1) = { -2.0361692235851914, 2.5515510043108915 };
+	m.element(1, 0) = { -1.7859714022930659, -1.1647750360679388 };
+	m.element(1, 1) = { 1.2078324840929935, -1.1647750360679388 };
+
+	return m;
+}
+
+varmesh<2> get_other_bilinear_patch()
+{
+	/*
+	-		[0]	{ size=2 }	std::array<double,2>
+		[0]	-2.9094401716819789	double
+		[1]	8.4614733038636381	double
++		[Raw View]	{_Elems=0x0000023f6ff76c30 {-2.9094401716819789, 8.4614733038636381} }	std::array<double,2>
+-		[1]	{ size=2 }	std::array<double,2>
+		[0]	0.089573925121074732	double
+		[1]	8.4614733038636381	double
++		[Raw View]	{_Elems=0x0000023f6ff76c40 {0.089573925121074732, 8.4614733038636381} }	std::array<double,2>
+-		[2]	{ size=2 }	std::array<double,2>
+		[0]	-1.6148652130335637	double
+		[1]	-0.66230593116212177	double
++		[Raw View]	{_Elems=0x0000023f6ff76c50 {-1.6148652130335637, -0.66230593116212177} }	std::array<double,2>
+-		[3]	{ size=2 }	std::array<double,2>
+		[0]	1.3841488837694897	double
+		[1]	-0.66230593116212177	double
+
+	*/
+
+	varmesh<2> m(2, 2);
+	m.element(0, 0) = { -2.9094401716819789, 8.4614733038636381 };
+	m.element(0, 1) = { 0.089573925121074732, 8.4614733038636381 };
+	m.element(1, 0) = { -1.6148652130335637, -0.66230593116212177 };
+	m.element(1, 1) = { 1.3841488837694897, -0.66230593116212177 };
+
+	return m;
+}
+
+varmesh<2> get_simple_bilinear_patch()
+{
+	varmesh<2> m(2, 2);
+	m.element(0, 0) = { -1, -1 };
+	m.element(0, 1) = { -1, 1 };
+	m.element(1, 0) = { 1, -1 };
+	m.element(1, 1) = { 1, 1 };
+
+	return m;
+}
+
+TEST(BilinearPatchIntersection, test_other_patch_roots_clipping)
+{
+	auto result = bilinear_patch_roots_clipping(get_other_bilinear_patch(), 1E-8);
+
+	EXPECT_EQ(result.size(), 1);
+	if (result.size() == 1)
+	{
+		auto y = evaluate_bezier_surface(get_other_bilinear_patch(), result[0][0], result[0][1]);
+
+		EXPECT_EQ((v2{ 0, 0 }), y);
+	}
+}
+
+TEST(BilinearPatchIntersection, test_clip_patch)
+{
+	auto m = get_simple_bilinear_patch();
+
+	auto cm{m};
+
+	bezier_clip_surface(cm, v2{ 0, 0.5 }, v2{ 0, 0.5 });
+
+	std::cout << "";
+}
+
+TEST(BilinearPatchIntersection, test_eval_patch)
+{
+	auto m = get_simple_bilinear_patch();
+
+	auto y = evaluate_bezier_surface(m, 0, 0.5);
+	y = evaluate_bezier_surface(m, 1, 0.5);
+	y = evaluate_bezier_surface(m, 0.5, 0);
+	y = evaluate_bezier_surface(m, 0.5, 1);
+	std::cout << "";
+}
+
+TEST(BilinearPatchIntersection, test_simple_patch_roots)
+{
+	auto result = bilinear_patch_roots(get_simple_bilinear_patch(), 1E-8);
+
+	EXPECT_EQ(result.size(), 1);
+
+	auto y = evaluate_bezier_surface(get_simple_bilinear_patch(), result[0][0], result[0][1]);
+
+	EXPECT_EQ((v2{ 0, 0 }), y);
+}
+
+TEST(BilinearPatchIntersection, test_patch_roots)
+{
+	auto result = bilinear_patch_roots(get_bilinear_patch(), 1E-8);
+
+	EXPECT_EQ(result.size(), 1);
+
+	auto y = evaluate_bezier_surface(get_bilinear_patch(), result[0][0], result[0][1]);
+
+	EXPECT_EQ((v2{ 0, 0 }), y);
+}
+
+TEST(BilinearPatchIntersection, test_simple_patch_roots_clipping)
+{
+	auto result = bilinear_patch_roots_clipping(get_simple_bilinear_patch(), 1E-8);
+
+	EXPECT_EQ(result.size(), 1);
+
+	auto y = evaluate_bezier_surface(get_simple_bilinear_patch(), result[0][0], result[0][1]);
+
+	EXPECT_EQ((v2{ 0, 0 }), y);
+}
+
+TEST(BilinearPatchIntersection, test_patch_roots_clipping)
+{
+	auto result = bilinear_patch_roots_clipping(get_bilinear_patch(), 1E-8);
+
+	EXPECT_EQ(result.size(), 1);
+	if (result.size() == 1)
+	{
+		auto y = evaluate_bezier_surface(get_bilinear_patch(), result[0][0], result[0][1]);
+
+		EXPECT_EQ((v2{ 0, 0 }), y);
+	}
+}
 
 TEST(Nurbs, vectorAddition)
 {

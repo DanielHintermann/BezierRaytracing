@@ -11,6 +11,19 @@ using ::testing::TestInfo;
 using ::testing::TestPartResult;
 using ::testing::UnitTest;
 
+TEST(Nurbs, test_bug_twisted_patch)
+{
+    auto scene = get_twisted_patch_scene();
+
+    screen_geometry screen(scene.screen_width, scene.screen_height, scene.field_of_view, 0, 0, 0);
+
+    auto ray = screen.get_corresponding_ray(341, 170);
+
+    auto intersections = get_ray_surface_intersection(ray, scene, 1E-8);
+
+    EXPECT_EQ(true, intersections.has_value());
+}
+
 TEST(Nurbs, test_bug_planar_patch)
 {
     auto scene = get_curved_patch_scene();
@@ -29,9 +42,24 @@ TEST(Nurbs, test_bug_planar_patch)
 
     auto ray = screen.get_corresponding_ray(191, 400);
 
-    auto intersections = get_ray_surface_intersection(ray, scene, 1E-4);
+    auto intersections = get_ray_surface_intersection(ray, scene, 1E-8);
 
     EXPECT_EQ(true, intersections.has_value());
+}
+
+TEST(Nurbs, test_twisted_patch)
+{
+    auto scene = get_twisted_patch_scene();
+
+    auto trace_ray_through_quasi_interpolation = [](std::vector<int>::iterator pixel, v3 ray, varmesh_scene_descriptor& scene) {
+        trace_ray(pixel, ray, scene);
+    };
+
+    auto [pixel, width, height] = raytrace_scene_multithreaded<varmesh_scene_descriptor>(scene, trace_ray_through_quasi_interpolation, threads_to_use());
+
+    auto file_name = GET_TEST_NAME + ".ppm";
+    serialize_as_ppm(get_actual_folder() / file_name, width, height, pixel);
+    compare_actual_with_expected_file(file_name);
 }
 
 TEST(Nurbs, test_sphere_patch)
@@ -42,7 +70,7 @@ TEST(Nurbs, test_sphere_patch)
         trace_ray(pixel, ray, scene);
     };
 
-    auto [pixel, width, height] = raytrace_scene_multithreaded<varmesh_scene_descriptor>(scene, trace_ray_through_quasi_interpolation, 12);
+    auto [pixel, width, height] = raytrace_scene_multithreaded<varmesh_scene_descriptor>(scene, trace_ray_through_quasi_interpolation, threads_to_use());
 
     auto file_name = GET_TEST_NAME + ".ppm";
     serialize_as_ppm(get_actual_folder() / file_name, width, height, pixel);
@@ -51,9 +79,9 @@ TEST(Nurbs, test_sphere_patch)
 
 TEST(Nurbs, test_curved_patch_subdivision)
 {
-    auto scene = get_curved_patch_scene();
+    auto scene = get_twisted_patch_scene();
 
-    auto [pixel, width, height] = raytrace_scene_with_meshes_hierarchy_multithreaded(scene, 12);
+    auto [pixel, width, height] = raytrace_scene_with_meshes_hierarchy_multithreaded(scene, threads_to_use());
 
     auto file_name = GET_TEST_NAME + ".ppm";
     serialize_as_ppm(get_actual_folder() / file_name, width, height, pixel);
@@ -71,7 +99,7 @@ TEST(Nurbs, test_teapot)
 
     facetted_surface_scene_descriptor scene = { 640, 480, {14, 9, -12}, 0, 0, 0, 30, {1, 1, 1}, points, facets };
 
-    auto [pixel, width, height] = raytrace_scene_with_facetted_surface_multithreaded(scene, 12);
+    auto [pixel, width, height] = raytrace_scene_with_facetted_surface_multithreaded(scene, threads_to_use());
 
     auto file_name = GET_TEST_NAME + ".ppm";
     serialize_as_ppm(get_actual_folder() / file_name, width, height, pixel);
@@ -82,7 +110,7 @@ TEST(Nurbs, test_curved_patch)
 {   
     auto scene = get_curved_patch_scene();
 
-    auto [pixel, width, height] = raytrace_scene_through_quasi_interpolation_multithreaded(scene, 12);
+    auto [pixel, width, height] = raytrace_scene_through_quasi_interpolation_multithreaded(scene, threads_to_use());
 
     auto file_name = GET_TEST_NAME + ".ppm";
     serialize_as_ppm(get_actual_folder() / file_name, width, height, pixel);
@@ -109,7 +137,28 @@ TEST(Nurbs, test_planar_patch)
 
     scene.mesh = plane;
 
-    auto [pixel, width, height] = raytrace_scene_through_quasi_interpolation_multithreaded(scene, 12);
+    auto [pixel, width, height] = raytrace_scene_through_quasi_interpolation_multithreaded(scene, threads_to_use());
+
+    auto file_name = GET_TEST_NAME + ".ppm";
+    serialize_as_ppm(get_actual_folder() / file_name, width, height, pixel);
+    compare_actual_with_expected_file(file_name);
+}
+
+TEST(Nurbs, test_planar_patch_diagonal)
+{
+    auto scene = get_curved_patch_scene();
+
+    varmesh<4> plane(2, 2);
+
+    plane[0][0] = v4{{-1.5, 1.5, 1, 1}};
+    plane[0][1] = v4{{1.5, 0.5, 1, 1}};
+    
+    plane[1][0] = v4{{-1, -0.5, 2, 1}};
+    plane[1][1] = v4{{1.5, -0.5, 2, 1}};
+
+    scene.mesh = plane;
+
+    auto [pixel, width, height] = raytrace_scene_through_quasi_interpolation_multithreaded(scene, threads_to_use());
 
     auto file_name = GET_TEST_NAME + ".ppm";
     serialize_as_ppm(get_actual_folder() / file_name, width, height, pixel);

@@ -108,7 +108,7 @@ std::vector<double> solve_linear_form(const v2& p, const v2& a, const v2& b, con
     std::vector<double> result;
     for (int i = 0; i < sols.size(); i++)
     {
-        if (-1e-9 <= sols[i] && 1 + 1e-9 >= sols[i])
+        if (-1e-12 <= sols[i] && 1 + 1e-12 >= sols[i])
         {
             result.push_back(sols[i]);
         }
@@ -304,6 +304,11 @@ double angle(v3 x, v3 y)
     if (lx > 0 && ly > 0)
     {
         auto cos_ang = x*y / (lx*ly);
+
+        if (cos_ang > 1)
+            cos_ang = 1;
+        if (cos_ang < -1)
+            cos_ang = -1;
 
         ang = acos(cos_ang);
     }

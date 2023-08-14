@@ -2,7 +2,164 @@
 
 #include <geometry/types/bezier_curve.h>
 #include <geometry/types/bezier_surface.h>
+#include <geometry/algorithms/bilinear_patch_intersection.h>
+
 #include <iostream>
+#include <algorithm>
+
+std::vector<double> crossing(double a, double b)
+{
+    std::vector<double> crossings;
+
+    if (a * b < 0)
+    {
+        crossings.push_back(a / (a - b));
+    }
+
+    if (a == 0)
+    {
+        crossings.push_back(0);
+    }
+
+    if (b == 0)
+    {
+        crossings.push_back(1);
+    }
+
+    return crossings;
+}
+
+v2 new_window(double e00, double e01, double e10, double e11)
+{
+    std::vector<double> crossings;
+
+    if (e00 * e10 <= 0)
+    {
+        crossings.push_back(0);
+    }
+
+    if (std::fabs(e00) < 1E-13 || std::fabs(e10) < 1E-9)
+    {
+        crossings.push_back(0);
+    }
+
+    if (std::fabs(e10) < 1E-13 || std::fabs(e11) < 1E-9)
+    {
+        crossings.push_back(1);
+    }
+
+    if (e01 * e11 <= 0)
+    {
+        crossings.push_back(1);
+    }
+
+    auto additional = crossing(e00, e01);
+    crossings.insert(crossings.end(), additional.begin(), additional.end());
+    additional = crossing(e00, e11);
+    crossings.insert(crossings.end(), additional.begin(), additional.end());
+    additional = crossing(e10, e01);
+    crossings.insert(crossings.end(), additional.begin(), additional.end());
+    additional = crossing(e10, e11);
+    crossings.insert(crossings.end(), additional.begin(), additional.end());
+
+    if (crossings.size() > 0)
+    {
+        return v2{*std::min_element(crossings.begin(), crossings.end()), *std::max_element(crossings.begin(), crossings.end()) };
+    }
+
+    return v2{ 1, 0 };
+}
+
+v2 new_window_u(varmesh<2> mesh, int index)
+{
+    auto u0_window = new_window(mesh.element(0, 0)[0], mesh.element(0, 1)[0], mesh.element(1, 0)[0], mesh.element(1, 1)[0]);
+    auto u1_window = new_window(mesh.element(0, 0)[1], mesh.element(0, 1)[1], mesh.element(1, 0)[1], mesh.element(1, 1)[1]);
+
+    if (u0_window[1] - u0_window[0] >= 0 && u1_window[1] - u1_window[0] >= 0)
+    {
+        return v2{std::max(u0_window[0], u1_window[0]), std::min(u0_window[1], u1_window[1]) };
+    }
+
+    return v2{ 1, 0 };
+}
+
+v2 new_window_v(varmesh<2> mesh, int index)
+{
+    auto v0_window = new_window(mesh.element(0, 0)[0], mesh.element(1, 0)[0], mesh.element(0, 1)[0], mesh.element(1, 1)[0]);
+    auto v1_window = new_window(mesh.element(0, 0)[1], mesh.element(1, 0)[1], mesh.element(0, 1)[1], mesh.element(1, 1)[1]);
+
+    if (v0_window[1] - v0_window[0] >= 0 && v1_window[1] - v1_window[0] >= 0)
+    {
+        return v2{ std::max(v0_window[0], v1_window[0]), std::min(v0_window[1], v1_window[1]) };
+    }
+
+    return v2{ 1, 0 };
+}
+
+std::vector<v2> bilinear_patch_roots_clipping(varmesh<2> mesh, double epsilon)
+{
+    std::vector<v2> roots;
+
+    int iteration = 0;
+
+    std::deque<std::pair<v2, v2>> q;
+
+    q.push_back({ {0, 1}, {0, 1} });
+
+    while (!q.empty())
+    {
+        if (iteration > 1000)
+        {
+            break;
+        }
+        auto cw = q.front();
+
+        q.pop_front();
+
+        auto cm{ mesh };
+        bezier_clip_surface(cm, cw.first, cw.second);
+
+        auto nw_u = new_window_u(cm, 0);
+        auto nw_v = new_window_v(cm, 1);
+
+        double wd_u = nw_u[1] - nw_u[0];
+        double wd_v = nw_v[1] - nw_v[0];
+
+        if (0 <= wd_u && 0 <= wd_v)
+        {
+            auto new_window_u = v2{ cw.first[0] * (1 - nw_u[0]) + cw.first[1] * nw_u[0], cw.first[0] * (1 - nw_u[1]) + cw.first[1] * nw_u[1] };
+            auto new_window_v = v2{ cw.second[0] * (1 - nw_v[0]) + cw.second[1] * nw_v[0], cw.second[0] * (1 - nw_v[1]) + cw.second[1] * nw_v[1] };
+
+            auto result = std::make_pair(new_window_u, new_window_v);
+
+            if (std::max(new_window_u[1] - new_window_u[0], new_window_v[1] - new_window_v[0]) < epsilon)
+            {
+                roots.push_back(v2{ v2{0.5, 0.5} *result.first , v2{ 0.5, 0.5 } *result.second});
+            }
+            else
+            {
+                if (wd_u < 0.75 && wd_v < 0.75)
+                {
+                    q.push_back(result);
+                }
+                else
+                {
+                    double mid_u = v2{ 0.5, 0.5 } *result.first;
+                    double mid_v = v2{ 0.5, 0.5 } *result.second;
+
+                    q.push_back(std::make_pair(v2{ result.first[0], mid_u }, v2{ result.second[0], mid_v }));
+                    q.push_back(std::make_pair(v2{ mid_u, result.first[1] }, v2{ result.second[0], mid_v }));
+                    q.push_back(std::make_pair(v2{ result.first[0], mid_u }, v2{ mid_v, result.second[1]}));
+                    q.push_back(std::make_pair(v2{ mid_u, result.first[1] }, v2{ mid_v, result.second[1]}));
+                }
+            }
+        }        
+
+        iteration++;
+    }
+
+    return roots;
+}
 
 bool intervalls_overlap(const v2& i, const v2& j)
 {
@@ -239,8 +396,17 @@ std::vector<std::vector<bool>> does_increased_mesh_contain_origin(const varmesh<
     return overlaps;
 }
 
+int signum(double d)
+{
+    return d > 0 ? 1 : (d < 0 ? -1 : 0);
+}
+
 std::vector<v2> bezier_quasi_interpolation_clipping(const varmesh<2> &points, double epsilon)
 {
+    if (points.col_size() == 2 && points.row_size() == 2)
+    {
+        return bilinear_patch_roots_clipping(points, epsilon); // 
+    }
     std::vector<v2> intersections;
     
     std::deque<std::pair<v2, v2>> q;
@@ -248,9 +414,13 @@ std::vector<v2> bezier_quasi_interpolation_clipping(const varmesh<2> &points, do
     q.push_back(std::make_pair(v2{{0, 1}}, v2{{0, 1}}));
     
     varmesh<2> clipped_mesh(points.row_size(), points.col_size());
+
+    int iteration_count = 0;
     
     while(!q.empty())
     {
+        iteration_count++;
+
         auto windows = q.front();
         q.pop_front();
         
@@ -259,6 +429,7 @@ std::vector<v2> bezier_quasi_interpolation_clipping(const varmesh<2> &points, do
         bezier_clip_surface(clipped_mesh, windows.first, windows.second);
         
         double max_deviation = bezier_max_deviation_to_quasi_interpolation(clipped_mesh);
+        
         double max_deviation2 = max_deviation * max_deviation;
         
         auto quasi = bezier_surface_quasi_interpolation(clipped_mesh);
@@ -273,42 +444,26 @@ std::vector<v2> bezier_quasi_interpolation_clipping(const varmesh<2> &points, do
             intersections.push_back(v2{ {u, v} });
         }
         else
-        {
-                auto does_contain_origin = does_increased_mesh_contain_origin(quasi, max_deviation);
+        {             
+            auto does_contain_origin = does_increased_mesh_contain_origin(quasi, max_deviation);
 
-                if (points.row_size() == 2 && points.col_size() == 2)
+            for (int i = 0; i < points.row_size() - 1; i++)
+            {
+                for (int j = 0; j < points.col_size() - 1; j++)
                 {
-                    if (does_contain_origin[0][0])
+                    if (does_contain_origin[i][j])
                     {
-                        double mid_u = (windows.first[0] + windows.first[1]) / 2;
-                        double mid_v = (windows.second[0] + windows.second[1]) / 2;
-
-                        q.push_back(std::make_pair(v2{ windows.first[0], mid_u }, v2{ windows.second[0], mid_v }));
-                        q.push_back(std::make_pair(v2{ windows.first[0], mid_u }, v2{ mid_v, windows.second[1] }));
-                        q.push_back(std::make_pair(v2{ mid_u, windows.first[1] }, v2{ mid_v, windows.second[1] }));
-                        q.push_back(std::make_pair(v2{ mid_u, windows.first[1] }, v2{ windows.second[0], mid_v }));
+                        double diffu = (windows.first[1] - windows.first[0]) / (points.col_size() - 1);
+                        v2 sub_intervall_u{ {diffu * j + windows.first[0], diffu * (j + 1) + windows.first[0]} };
+                        double diffv = (windows.second[1] - windows.second[0]) / (points.row_size() - 1);
+                        v2 sub_intervall_v{ {diffv * i + windows.second[0], diffv * (i + 1) + windows.second[0]} };
+                        q.push_back(std::make_pair(sub_intervall_u, sub_intervall_v));
                     }
                 }
-                else
-                {
-                    for (int i = 0; i < points.row_size() - 1; i++)
-                    {
-                        for (int j = 0; j < points.col_size() - 1; j++)
-                        {
-                            if (does_contain_origin[i][j])
-                            {
-                                double diffu = (windows.first[1] - windows.first[0]) / (points.col_size() - 1);
-                                v2 sub_intervall_u{ {diffu * j + windows.first[0], diffu * (j + 1) + windows.first[0]} };
-                                double diffv = (windows.second[1] - windows.second[0]) / (points.row_size() - 1);
-                                v2 sub_intervall_v{ {diffv * i + windows.second[0], diffv * (i + 1) + windows.second[0]} };
-                                q.push_back(std::make_pair(sub_intervall_u, sub_intervall_v));
-                            }
-                        }
-                    }
-                }
+            }
         }        
     }
-    
+
     return intersections;
 }
 

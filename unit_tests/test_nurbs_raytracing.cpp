@@ -38,6 +38,48 @@ TEST(Nurbs, evaluateBezier3)
 	EXPECT_EQ(expected, evaluate_bezier_curve(controlPoints, 0.5));
 }
 
+TEST(Nurbs, evaluateBezierSurface)
+{
+    varmesh<2> m(2, 2);
+    m.element(0, 0) = v2{ 1, -1 };
+    m.element(0, 1) = v2{ 2, -2 };
+    m.element(1, 0) = v2{ 3, -3 };
+    m.element(1, 1) = v2{ 4, -4 };
+
+    auto y = evaluate_bezier_surface(m, 0, 0);
+
+    EXPECT_EQ(y, (v2{ 1, -1 }));
+
+    y = evaluate_bezier_surface(m, 1, 0);
+
+    EXPECT_EQ(y, (v2{ 2, -2 }));
+
+    y = evaluate_bezier_surface(m, 0, 1);
+
+    EXPECT_EQ(y, (v2{ 3, -3 }));
+
+    y = evaluate_bezier_surface(m, 1, 1);
+
+    EXPECT_EQ(y, (v2{ 4, -4 }));
+}
+
+TEST(Nurbs, bezierSurfaceClipping)
+{
+    varmesh<2> m(2, 2);
+    m.element(0, 0) = v2{ 1, -1 };
+    m.element(0, 1) = v2{ 2, -2 };
+    m.element(1, 0) = v2{ 3, -3 };
+    m.element(1, 1) = v2{ 4, -4 };
+
+    auto c{ m };
+    bezier_clip_surface(c, { 0.9, 1 }, { 0, 1 });
+
+    EXPECT_EQ(c.element(0, 1), (v2{ 2, -2 }));
+    EXPECT_EQ(c.element(1, 1), (v2{ 4, -4 }));
+    EXPECT_EQ(c.element(0, 0), (v2{ 1.9, -1.9 }));
+    EXPECT_EQ(c.element(1, 0), (v2{ 3.9, -3.9 }));
+}
+
 TEST(Nurbs, test_subdivide_bezier)
 {
     v2 k{{1, 2}};

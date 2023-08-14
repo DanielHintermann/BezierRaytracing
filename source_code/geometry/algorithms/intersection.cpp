@@ -89,7 +89,7 @@ bool intersects_convex_hull(const v3 &origin, const v3 &dir, const std::vector<v
     return res;
 }
 
-bool is_origin_in_convex_hull_atan2(std::vector<v2> &points)
+bool is_origin_in_convex_hull_atan2(std::vector<v2> points)
 {
     std::vector<double> angles;
     for (auto point = points.begin(); point != points.end(); point++)
@@ -116,7 +116,7 @@ bool is_origin_in_convex_hull_atan2(std::vector<v2> &points)
     return true;
 }
 
-bool is_origin_in_convex_hull(std::vector<v2> &points)
+bool is_origin_in_convex_hull(std::vector<v2> points)
 {
     std::sort(points.begin(), points.end(), compare_polar);
     
