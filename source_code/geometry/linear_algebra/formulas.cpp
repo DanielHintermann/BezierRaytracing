@@ -315,3 +315,7 @@ double angle(v3 x, v3 y)
 
     return ang;
 }
+
+v3 reflect(const v3& ray_direction, const v3& normale) {
+    return ray_direction - 2 * (ray_direction * normale) * normale;
+}

@@ -39,7 +39,57 @@ template<std::size_t N> v<N> evaluate_bezier_curve_derivative(const std::vector<
         diffs.push_back(control_points[i + 1] - control_points[i]);
     }
 
-    return evaluate_bezier_curve(diffs, u);
+    return (control_points.size()-1) * evaluate_bezier_curve(diffs, u);
+}
+
+template<std::size_t N> v<N> evaluate_rational_bezier_curve_derivative(const std::vector<v<N>>& points, double t)
+{
+    int n = points.size() - 1;
+
+        v<N-1> Q[3][3];
+        double ww[3][3];
+        unsigned int r;
+        std::vector<v<N-1>> aux(n + 1);
+        std::vector<double> w(n + 1);
+        double t1 = 1.0 - t;
+        double u, v;
+        for (int i = 0; i <= n; i++)
+        {
+            aux[i] = remove_dimension(points[i]);
+            w[i] = (points[i][N-1]);
+        }
+        if (n <= 2)
+        {
+            int j_max = 2 - n;
+            for (int j = 0; j <= 2 - j_max; j++)
+            {
+                Q[j_max][j] = aux[j];
+                ww[j_max][j] = w[j];
+            }
+        }
+        for (int k = 1; k <= n; k++)
+        {
+            for (int i = 0; i <= n - k; i++)
+            {
+                u = t1 * w[i];
+                v = t * w[i + 1];
+                w[i] = u + v;
+                u /= w[i];
+                v = 1.0 - u;
+                aux[i] = u * aux[i] + v * aux[i + 1];
+            }
+            if (k >= n - 2)
+            {
+                int j_max = k - n + 2;
+                for (int j = 0; j <= 2 - j_max; j++)
+                {
+                    Q[j_max][j] = aux[j];
+                    ww[j_max][j] = w[j];
+                }
+            }
+        }
+        //derivatives[0] = Q[2][0];
+        return add_dimension((n * ww[1][0] * ww[1][1] / (ww[2][0] * ww[2][0])) * (Q[1][1] - Q[1][0]));
 }
 
 

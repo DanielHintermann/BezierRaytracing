@@ -553,11 +553,8 @@ TEST(Nurbs, test_bezier_clip_umin_umax_bug)
 TEST(Nurbs, test_raytrace_scene_multithreaded_empty)
 {
     scene_descriptor scene = {
-    512,
-    512,
+    screen_geometry(512, 512, 30, 0, 0, 0),
     v3{0, 0, -5},
-    0, 0, 0,
-    30,
     v3{1, 5, 1}
     };
 

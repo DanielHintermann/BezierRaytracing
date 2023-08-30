@@ -5,4 +5,6 @@
 
 double shade(const v3& normale, const v3& light_direction);
 
+v3 random_unit_vector(v3 normale);
+
 #endif

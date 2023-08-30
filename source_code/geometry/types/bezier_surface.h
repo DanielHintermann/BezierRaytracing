@@ -222,4 +222,6 @@ template<size_t d> std::vector<varmesh<d>> mesh_subdivision_hierarchy(const varm
     return meshes_hierarchy;
 }
 
+std::pair<v3, v3> evaluate_bezier_surface_derivatives(const varmesh<4>& mesh, double u, double v);
+
 #endif

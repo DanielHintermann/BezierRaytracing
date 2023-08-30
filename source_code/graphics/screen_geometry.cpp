@@ -25,6 +25,18 @@ v3 screen_geometry::get_corresponding_ray(int x, int y)
     return remove_dimension(rotation * v4{ xx, yy, 1, 1 });
 }
 
+v3 screen_geometry::get_corresponding_ray(double x, double y)
+{
+    double invWidth = 1. / double(sw);
+    double invHeight = 1. / double(sh);
+
+    double xx = (2 * ((x + 0.5) * invWidth) - 1) * tan_fov_x;
+
+    double yy = (1 - 2 * ((y + 0.5) * invHeight)) * tan_fov_y;
+
+    return remove_dimension(rotation * v4{ xx, yy, 1, 1 });
+}
+
 std::tuple<int, int> screen_geometry::get_corresponding_screen_pixel(v3 ray)
 {
     ray = remove_dimension(inverse_rotation * add_dimension(ray));
@@ -35,4 +47,14 @@ std::tuple<int, int> screen_geometry::get_corresponding_screen_pixel(v3 ray)
     int y = (int)round(-0.5 - 0.5 * sh * (projected_ray[1] / tan_fov_y - 1));
 
 	return std::tuple<int, int>(x, y);
+}
+
+int screen_geometry::get_width()
+{
+    return sw;
+}
+
+int screen_geometry::get_height()
+{
+    return sh;
 }

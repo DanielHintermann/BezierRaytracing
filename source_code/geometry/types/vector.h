@@ -71,6 +71,18 @@ template<std::size_t N> v<N> operator*(double scale, const v<N>& q)
     return result;
 }
 
+template<std::size_t N> v<N> component_mul(const v<N>& p, const v<N>& q)
+{
+    std::array<double, N> result;
+
+    for (int i = 0; i < N; i++)
+    {
+        result[i] = p[i] * q[i];
+    }
+
+    return result;
+}
+
 template<std::size_t N> double length2(const v<N>& p)
 {
     return p * p;

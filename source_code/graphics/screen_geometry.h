@@ -11,7 +11,10 @@ class screen_geometry
 public:
 	screen_geometry(int screen_width, int screen_height, double field_of_view, double a1, double a2, double a3);
 	v3 get_corresponding_ray(int x, int y);
+	v3 get_corresponding_ray(double x, double y);
 	std::tuple<int, int> get_corresponding_screen_pixel(v3 ray);
+	int get_width();
+	int get_height();
 private:
 	int sw;
 	int sh;

@@ -19,12 +19,9 @@
 #include <raytracing/synciterator.h>
 #include <graphics/graphics_formulas.h>
 
-std::optional<std::tuple<v3, v3, v2>> get_ray_surface_intersection(v3 ray, varmesh_scene_descriptor& scene, double epsilon);
-std::optional<std::tuple<int, v3, v3, v2>> get_ray_surface_intersection(v3 ray, multiple_surfaces_scene_descriptor& scene, double epsilon);
+std::optional<std::tuple<int, intersection>> get_ray_surface_intersection(v3 ray_origin, v3 ray, multiple_surfaces_scene_descriptor& scene);
 
-void trace_ray(std::vector<int>::iterator pixel, v3 ray, varmesh_scene_descriptor& scene);
-
-void trace_ray(std::vector<int>::iterator pixel, v3 ray, multiple_surfaces_scene_descriptor& scene);
+v3 trace_ray(v3 ray_origin, v3 ray, multiple_surfaces_scene_descriptor& scene, int depth);
 
 
 #endif

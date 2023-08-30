@@ -78,4 +78,6 @@ varmesh<2> project_mesh(const varmesh<4>& m, const v4& plane1, const v4& plane2)
 
 v3 normale_of_mesh(const varmesh<3>& m);
 
+v3 reflect(const v3& ray_direction, const v3& normale);
+
 #endif // geometry_linear_algebra_formulas_h

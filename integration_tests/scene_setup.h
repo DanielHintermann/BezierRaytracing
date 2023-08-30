@@ -17,7 +17,7 @@ std::filesystem::path get_actual_folder();
 
 std::filesystem::path get_expected_folder();
 
-std::function<std::vector<int>(double, double)> get_texture(int index);
+std::function<v3(double, double)> get_texture(int index);
 
 varmesh<4> get_curved_patch();
 
@@ -25,11 +25,11 @@ varmesh<4> get_sphere_patch();
 
 varmesh<4> get_twisted_patch();
 
-varmesh_scene_descriptor get_curved_patch_scene();
+multiple_surfaces_scene_descriptor get_curved_patch_scene();
 
-varmesh_scene_descriptor get_sphere_scene();
+multiple_surfaces_scene_descriptor get_sphere_scene();
 
-varmesh_scene_descriptor get_twisted_patch_scene();
+multiple_surfaces_scene_descriptor get_twisted_patch_scene();
 
 multiple_surfaces_scene_descriptor get_multiple_surfaces_scene();
 multiple_surfaces_scene_descriptor get_multiple_splitted_surfaces_scene();

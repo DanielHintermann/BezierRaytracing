@@ -301,3 +301,63 @@ TEST(Mesh, test_get_elements)
 	}
 }
 
+TEST(Bezier, test_surface_derivatives)
+{
+	varmesh<4> m(3, 4);
+
+	m.element(0, 0) = { 0, 0, 6, 1 };
+	m.element(0, 1) = { 3, 0, 0, 1 };
+	m.element(0, 2) = { 6, 0, 0, 1 };
+	m.element(0, 3) = { 9, 0, 6, 1 };
+
+	m.element(1, 0) = { 0, 3, 3, 1 };
+	m.element(1, 1) = { 3, 3, 0, 1 };
+	m.element(1, 2) = { 6, 3, 0, 1 };
+	m.element(1, 3) = { 9, 3, 0, 1 };
+
+	m.element(2, 0) = { 0, 6, 6, 1 };
+	m.element(2, 1) = { 3, 6, 0, 1 };
+	m.element(2, 2) = { 6, 6, 0, 1 };
+	m.element(2, 3) = { 9, 6, 6, 1 };
+
+	double u = 0.5;
+	double v = 0.5;
+
+	auto curve_u = bezier_curve_on_surface_u(m, v);
+
+	auto derivative_u = evaluate_rational_bezier_curve_derivative(curve_u, u);
+
+	auto curve_v = bezier_curve_on_surface_v(m, u);
+
+	auto derivative_v = evaluate_rational_bezier_curve_derivative(curve_v, v);
+
+	EXPECT_EQ(derivative_u, (v4{ 9, 0, -1.125, 1 }));
+	EXPECT_EQ(derivative_v, (v4{ 0, 6, 0, 1 }));
+
+	auto n = cross_product(remove_dimension(derivative_u), remove_dimension(derivative_v));
+
+	auto nn = normalize(n);
+
+	//EXPECT_EQ(nn, (v3{-0.1240, 0, -0.9922}));
+
+	double eps = 1E-8;
+
+	auto y = evaluate_bezier_surface(m, u, v);
+	auto yu = evaluate_bezier_surface(m, u + eps, v);
+	auto yv = evaluate_bezier_surface(m, u, v + eps);
+
+	double inv_eps = 1.0 / eps;
+
+	auto adu = inv_eps*(yu - y);
+	adu[3] = 1;
+
+	auto adv = inv_eps * (yv - y);
+	adv[3] = 1;
+
+	auto an = cross_product(remove_dimension(adu), remove_dimension(adv));
+
+	auto ann = normalize(an);
+
+	EXPECT_EQ(ann, (v3{-0.1240, 0, -0.9922}));
+}
+

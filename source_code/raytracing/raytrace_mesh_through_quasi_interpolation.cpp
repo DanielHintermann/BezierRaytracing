@@ -1,93 +1,43 @@
 #include "raytrace_mesh_through_quasi_interpolation.h"
 
-std::pair<v3, v3> evaluate_bezier_surface_derivatives(const varmesh<4> &mesh, double u, double v)
+#include <geometry/linear_algebra/formulas.h>
+
+
+std::pair<v3, v3> approximate_bezier_surface_derivatives(const varmesh<4>& mesh, double u, double v)
 {
-    auto curve_u = bezier_curve_on_surface_u(mesh, v);
+    double eps = 1E-8;
 
-    auto derivative_u = evaluate_bezier_curve_derivative(curve_u, u);
+    auto y = evaluate_bezier_surface(mesh, u, v);
+    auto yu = evaluate_bezier_surface(mesh, u + eps, v);
+    auto yv = evaluate_bezier_surface(mesh, u, v + eps);
 
-    auto du = remove_last_component(derivative_u);
-
-    auto curve_v = bezier_curve_on_surface_v(mesh, u);
-
-    auto derivative_v = evaluate_bezier_curve_derivative(curve_v, v);
-
-    auto dv = remove_last_component(derivative_v);
-
-    return std::make_pair(du, dv);
+    double inv_eps = 1.0 / eps;
+    
+    return std::make_pair(inv_eps * (remove_dimension(yu) - remove_dimension(y)), inv_eps * (remove_dimension(yv) -remove_dimension(y)));
 }
 
-std::optional<std::tuple<v3, v3, v2>> get_ray_surface_intersection(v3 ray, varmesh_scene_descriptor& scene, double epsilon)
-{
-    std::vector<v2> intersections = get_intersections_quasi(scene.origin, ray, scene.mesh, epsilon);
+std::optional<std::tuple<int, intersection>> get_ray_surface_intersection(v3 ray_origin, v3 ray, multiple_surfaces_scene_descriptor& scene)
+{   
+    double dist2 = std::numeric_limits<double>::max();
+    intersection closest_intersection;
+    int intersection_scene_object = -1;
 
-    if (0 < intersections.size())
+    for (int scene_object_index = 0; scene_object_index < scene.surfaces.size(); scene_object_index++)
     {
-        double dist2 = std::numeric_limits<double>::max();
-        int closest = -1;
-        v3 distance_vector;
-        for (int i = 0; i < intersections.size(); i++)
-        {
-            v3 distvec = remove_dimension(evaluate_bezier_surface(scene.mesh, intersections[i][0], intersections[i][1])) - scene.origin;
+        std::optional<intersection> object_intersecton = scene.surfaces[scene_object_index]->get_intersection(ray_origin, ray);
 
-            if (0 < distvec * ray)
+        if (object_intersecton.has_value())
+        {
+            v3 distvec = object_intersecton->location - ray_origin;
+
+            if (1E-8 < distvec * ray)
             {
                 double this_t = distvec * distvec;
                 if (this_t < dist2)
                 {
                     dist2 = this_t;
-                    closest = i;
-                    distance_vector = distvec;
-                }
-            }
-        }
-
-        if (closest < 0)
-            return {};
-
-        auto [du, dv] = evaluate_bezier_surface_derivatives(scene.mesh, intersections[closest][0], intersections[closest][1]);
-
-        auto normale = cross_product((du), (dv));
-
-        return { std::make_tuple(distance_vector, normale, v2{ intersections[closest][0], intersections[closest][1] }) };
-    }
-
-    return {};
-}
-
-std::optional<std::tuple<int, v3, v3, v2>> get_ray_surface_intersection(v3 ray, multiple_surfaces_scene_descriptor& scene, double epsilon)
-{   
-    double dist2 = std::numeric_limits<double>::max();
-    v2 intersection_uv;
-    int intersection_scene_object = -1;
-    v3 distance_vector;
-
-    for (int scene_object_index = 0; scene_object_index < scene.surfaces.size(); scene_object_index++)
-    {
-        std::vector<v2> intersections = get_intersections_quasi(scene.origin, ray, scene.surfaces[scene_object_index].mesh, epsilon);
-
-        if (0 < intersections.size())
-        {
-            for (int i = 0; i < intersections.size(); i++)
-            {
-                v3 distvec = remove_dimension(evaluate_bezier_surface(scene.surfaces[scene_object_index].mesh, intersections[i][0], intersections[i][1])) - scene.origin;
-
-                //std::cout << "\nDist vec : " << distvec[0] << ", " << distvec[1] << ", " << distvec[2];
-
-                //auto a = angle(distvec, ray);
-
-                //std::cout << "\nangle : " << 180 * a / std::numbers::pi;
-
-                if (0 < distvec * ray)
-                {
-                    double this_t = distvec * distvec;
-                    if (this_t < dist2)
-                    {
-                        dist2 = this_t;
-                        intersection_uv = intersections[i];
-                        distance_vector = distvec;
-                        intersection_scene_object = scene_object_index;
-                    }
+                    closest_intersection = *object_intersecton;
+                    intersection_scene_object = scene_object_index;
                 }
             }
         }
@@ -96,45 +46,67 @@ std::optional<std::tuple<int, v3, v3, v2>> get_ray_surface_intersection(v3 ray, 
     if (intersection_scene_object < 0)
         return {};
 
-    auto [du, dv] = evaluate_bezier_surface_derivatives(scene.surfaces[intersection_scene_object].mesh, intersection_uv[0], intersection_uv[1]);
-
-    auto normale = cross_product((du), (dv));
-
-    return { std::make_tuple(intersection_scene_object, distance_vector, normale, intersection_uv) };
+    return { std::make_tuple(intersection_scene_object, closest_intersection) };
 }
 
-void trace_ray(std::vector<int>::iterator pixel, v3 ray, varmesh_scene_descriptor& scene)
+v3 trace_ray(v3 ray_origin, v3 ray, multiple_surfaces_scene_descriptor& scene, int depth)
 {
-    auto intersection = get_ray_surface_intersection(ray, scene, scene.epsilon);
+    ray = normalize(ray);
 
-    if (intersection.has_value())
+    auto closest_intersection = get_ray_surface_intersection(ray_origin, ray, scene);
+
+    if (closest_intersection.has_value())
     {
-        auto [distance_vector, normale, uv_parameter] = *intersection;
+        auto [intersection_scene_object, intersection_parameters] = *closest_intersection;
 
-        double shade_factor = shade(normale, scene.light);
+        bool is_top = (intersection_parameters.normale * ray < 0);
 
-        auto mesh_color = scene.mesh_color(uv_parameter[0], uv_parameter[1]);
+        if (!is_top)
+        {
+            intersection_parameters.normale = -intersection_parameters.normale;
+        }
 
-        *pixel++ = (std::round(shade_factor * mesh_color[0]));
-        *pixel++ = (std::round(shade_factor * mesh_color[1]));
-        *pixel++ = (std::round(shade_factor * mesh_color[2]));
+        auto reflected_ray = reflect(ray, intersection_parameters.normale);
+
+        double shade_factor = shade(intersection_parameters.normale, scene.light - intersection_parameters.location);
+
+        auto mesh_color = scene.surfaces[intersection_scene_object]->mesh_color(intersection_parameters.uv[0], intersection_parameters.uv[1]);
+
+        if (scene.surfaces[intersection_scene_object]->object_material == diffuse)
+        {
+            if (scene.max_raytracing_recursion > depth)
+            {
+                auto cumulated_color = v3{ 0, 0, 0 };
+                int count = 0;
+                for (int i = 0; i < 6; i++)
+                {
+                    auto sub_ray_dir = normalize(intersection_parameters.normale) + random_unit_vector(intersection_parameters.normale);
+                    auto diffuse_ray_color = trace_ray(intersection_parameters.location + 1E-8 * intersection_parameters.normale, sub_ray_dir, scene, depth + 1);
+                    cumulated_color = cumulated_color + component_mul(mesh_color, diffuse_ray_color);
+                    count++;
+                }
+                return (1./count) * cumulated_color;
+            }
+            else
+            {
+                return v3{ 0.5, 0.5, 0.5 }; // shade_factor* mesh_color;
+            }
+        }
+        else if (scene.surfaces[intersection_scene_object]->object_material == reflective)
+        {
+            if (scene.max_raytracing_recursion > depth)
+            {
+                auto reflected_ray_color = trace_ray(intersection_parameters.location + 1E-8 * intersection_parameters.normale, reflected_ray, scene, depth + 1);
+                return 0.9 * reflected_ray_color;
+            }
+            else
+            {
+                return v3{0.5, 0.5, 0.5}; // shade_factor* mesh_color;
+            }
+        }
+        return shade_factor * mesh_color;
     }
-}
 
-void trace_ray(std::vector<int>::iterator pixel, v3 ray, multiple_surfaces_scene_descriptor& scene)
-{
-    auto intersection = get_ray_surface_intersection(ray, scene, scene.epsilon);
-
-    if (intersection.has_value())
-    {
-        auto [intersection_scene_object, distance_vector, normale, uv_parameter] = *intersection;
-
-        double shade_factor = shade(normale, scene.light);
-
-        auto mesh_color = scene.surfaces[intersection_scene_object].mesh_color(uv_parameter[0], uv_parameter[1]);
-
-        *pixel++ = (std::round(shade_factor * mesh_color[0]));
-        *pixel++ = (std::round(shade_factor * mesh_color[1]));
-        *pixel++ = (std::round(shade_factor * mesh_color[2]));
-    }
+    auto a = 0.5 * (ray[1] + 1.0);
+    return (1.0 - a) * v3 { 1.0, 1.0, 1.0 } + a * v3{ 0.5, 0.7, 1.0 };
 }

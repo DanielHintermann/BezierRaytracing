@@ -25,7 +25,7 @@ std::filesystem::path get_expected_folder()
     return std::filesystem::path(__FILE__).parent_path() / "expected";
 }
 
-std::function<std::vector<int>(double, double)> get_texture(int index)
+std::function<v3(double, double)> get_texture(int index)
 {
     switch (index)
     {
@@ -39,9 +39,9 @@ std::function<std::vector<int>(double, double)> get_texture(int index)
             }
 
             if (0 == color_index)
-                return std::vector<int>{ {255, 210, 80}};
+                return v3{ {1, 210./256, 80./256}};
             else
-                return std::vector<int>{ {210, 80, 255}};
+                return v3{ {210. / 256, 80. / 256, 255. / 256}};
         };
     case 1:
         return [](double u, double v) {
@@ -53,12 +53,12 @@ std::function<std::vector<int>(double, double)> get_texture(int index)
             }
 
             if (0 == color_index)
-                return std::vector<int>{ {255, 80, 210}};
+                return v3{ {255./255, 80. / 255, 210. / 255}};
             else
-                return std::vector<int>{ {25, 255, 45}};
+                return v3{ {25. / 255, 255. / 255, 45. / 255}};
         };
     default:
-        return [](double u, double v) { return std::vector<int>{0, 0, 0}; };
+        return [](double u, double v) { return v3{0, 0, 0}; };
     }
 }
 
@@ -160,51 +160,42 @@ varmesh<4> get_twisted_patch3()
     return m;
 }
 
-varmesh_scene_descriptor get_curved_patch_scene()
+multiple_surfaces_scene_descriptor get_curved_patch_scene()
 {
-    varmesh_scene_descriptor scene = {
-    512,
-    512,
+    multiple_surfaces_scene_descriptor scene = {
+    screen_geometry(1024, 1024, 30, 0, 0, 0),
     v3{0, 0, -5},
-    0, 0, 0,
-    30,
-    v3{-1, 2, -5},
-    get_curved_patch(),
-    get_texture(0),
+    v3{-1, 2, -5}, 10,
+    std::vector< std::shared_ptr<scene_object>>{
+        std::make_shared<varmesh_scene_object>(get_curved_patch(), get_texture(0), diffuse)},
     1E-5
     };
 
     return scene;
 }
 
-varmesh_scene_descriptor get_twisted_patch_scene()
+multiple_surfaces_scene_descriptor get_twisted_patch_scene()
 {
-    varmesh_scene_descriptor scene = {
-    512,
-    512,
+    multiple_surfaces_scene_descriptor scene = {
+    screen_geometry(1024, 1024, 30, 0, 0, 0),
     v3{0, 0, -5},
-    0, 0, 0,
-    30,
-    v3{-1, 2, -5},
-    get_twisted_patch(),
-    get_texture(0),
+    v3{-1, 2, -5}, 10,
+    std::vector< std::shared_ptr<scene_object>>{
+        std::make_shared<varmesh_scene_object>(get_twisted_patch(), get_texture(0), diffuse)},
     1E-9
     };
 
     return scene;
 }
 
-varmesh_scene_descriptor get_sphere_scene()
+multiple_surfaces_scene_descriptor get_sphere_scene()
 {
-    varmesh_scene_descriptor scene = {
-    512,
-    512,
+    multiple_surfaces_scene_descriptor scene = {
+    screen_geometry(1024, 1024, 30, 0, 0, 0),
     v3{0, 0, -35},
-    0, 0, 0,
-    30,
-    -1 * v3{-1, 1, -5},
-    get_sphere_patch(),
-    get_texture(0),
+    -1 * v3{-1, 1, -5}, 10,
+    std::vector< std::shared_ptr<scene_object>>{
+        std::make_shared<varmesh_scene_object>(get_sphere_patch(), get_texture(0), diffuse)},
     1E-5
     };
 
@@ -213,27 +204,33 @@ varmesh_scene_descriptor get_sphere_scene()
 
 multiple_surfaces_scene_descriptor get_multiple_surfaces_scene()
 {
-    varmesh<4> plane(2, 2);
+    varmesh<4> plane(3, 3);
 
-    plane[0][0] = v4{ {-1.5, -1.5, 50, 1} };
-    plane[0][1] = v4{ {1.5,-1.5, 50, 1} };
+    plane[0][0] = v4{ {-20.5, 6, 50, 1} };
+    plane[0][1] = v4{ {0, 3, 50, 1} };
+    plane[0][2] = v4{ {20.5 ,6, 50, 1} };
 
-    plane[1][0] = v4{ {-1.5, -1.5, -0.5, 1} };
-    plane[1][1] = v4{ {1.5, -1.5, -0.5, 1} };
+    plane[1][0] = v4{ {-20.5, 2.0, 25, 1} };
+    plane[1][1] = 1.4*v4{ {0, -6.5, 25, 1} };
+    plane[1][2] = v4{ {20.5 ,1.6, 25, 1} };
 
-    auto objects = std::vector<scene_object>{
-        scene_object{ move(scale(get_curved_patch(), -0.6), v3{0.4, 0.4, 3}), get_texture(0) },
-        scene_object{ move(scale(get_curved_patch(), 0.6), v3{-0.3, -0.3, 2}), get_texture(1) },
-        scene_object{ plane, get_texture(0)}
+    plane[2][0] = v4{ {-20.5, 2, -0.5, 1} };
+    plane[2][1] = 0.9*v4{ {0, -4.5, -0.5, 1} };
+    plane[2][2] = v4{ {20.5, 2, -0.5, 1} };
+
+    auto objects = std::vector<std::shared_ptr<scene_object>>{
+        std::make_shared<sphere_scene_object>(v3{-1, 1, 3}, 1, get_texture(0), diffuse),
+        std::make_shared<sphere_scene_object>(v3{1.5, 0, 4}, 0.7, get_texture(1), reflective),
+        std::make_shared<sphere_scene_object>(v3{0, -0.5, 5}, 0.9, get_texture(1), diffuse),
+        //std::make_shared<varmesh_scene_object>(move(scale(get_curved_patch(), -0.6), v3{0.4, 0.4, 3}), get_texture(0), diffuse),
+        //std::make_shared<varmesh_scene_object>(move(scale(get_curved_patch(), 0.6), v3{-0.3, -0.3, 2}), get_texture(1), diffuse),
+        std::make_shared<varmesh_scene_object>(plane, get_texture(0), reflective)
     };
 
     return multiple_surfaces_scene_descriptor {
-            512,
-            512,
+        screen_geometry(1024, 1024, 30, 0, 0, 0),
             v3{ 0, 0, -5 },
-            0, 0, 0,
-            30,
-            v3{ -1, 2, -5 },
+            v3{ 5, 10, -5 }, 4,
                 objects,
                 1E-8
     };
@@ -249,10 +246,10 @@ multiple_surfaces_scene_descriptor get_multiple_splitted_surfaces_scene()
     plane[1][0] = v4{ {-1.5, -1.5, -0.5, 1} };
     plane[1][1] = v4{ {1.5, -1.5, -0.5, 1} };
 
-    auto objects = std::vector<scene_object>{
-        scene_object{ move(scale(get_curved_patch(), -0.6), v3{0.4, 0.4, 3}), get_texture(0) },
-        scene_object{ move(scale(get_curved_patch(), 0.6), v3{-0.3, -0.3, 2}), get_texture(1) },
-        scene_object{ plane, get_texture(0)}
+    auto objects = std::vector< std::shared_ptr<scene_object>>{
+        std::make_shared<varmesh_scene_object>(move(scale(get_curved_patch(), -0.6), v3{0.4, 0.4, 3}), get_texture(0), diffuse),
+        std::make_shared<varmesh_scene_object>(move(scale(get_curved_patch(), 0.6), v3{-0.3, -0.3, 2}), get_texture(1), reflective),
+        std::make_shared<varmesh_scene_object>(plane, get_texture(0), reflective)
     };
 
     for (int i = 1; i < 50; i++)
@@ -265,17 +262,15 @@ multiple_surfaces_scene_descriptor get_multiple_splitted_surfaces_scene()
         p[1][0] = v4{ {-1.5, -1.5, i + 0., 1} };
         p[1][1] = v4{ {1.5, -1.5, i + 0., 1} };
 
-        objects.push_back(scene_object{ p, get_texture(0) });
+        objects.push_back(std::make_shared<varmesh_scene_object>(p, get_texture(0), diffuse));
     }
 
     return multiple_surfaces_scene_descriptor{
-            512,
-            512,
+        screen_geometry(1024, 1024, 30, 0, 0, 0),
             v3{ 0, 0, -5 },
-            0, 0, 0,
-            30,
-            v3{ -1, 2, -5 },
+            v3{ 5, 10, -5 }, 10, 
                 objects,
                 1E-8
+                
     };
 }
